@@ -409,3 +409,20 @@ async def get_stats():
             "total_sent": total_sent,
             "total_ads": total_ads
         }
+    async def get_filters_for_panel():
+
+        async with aiosqlite.connect(DB_NAME) as db:
+
+            cur = await db.execute("""
+                SELECT
+                    id,
+                    telegram_id,
+                    source,
+                    COALESCE(name, 'Без названия'),
+                    url,
+                    active
+                FROM filters
+                ORDER BY id DESC
+            """)
+
+        return await cur.fetchall()

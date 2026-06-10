@@ -1,38 +1,205 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <title>Kufar Bot Panel</title>
+
+<meta charset="utf-8">
+
+<title>Kufar Monitor</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#0f172a;
+    color:white;
+    font-family:Arial;
+}
+
+.wrapper{
+    max-width:1200px;
+    margin:auto;
+    padding:30px;
+}
+
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:15px;
+}
+
+input,select{
+
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    margin-bottom:10px;
+
+    border:none;
+    border-radius:8px;
+}
+
+button{
+
+    padding:10px 15px;
+    border:none;
+
+    border-radius:8px;
+
+    cursor:pointer;
+}
+
+.delete{
+    background:red;
+    color:white;
+}
+
+.add{
+    background:#2563eb;
+    color:white;
+}
+
+.stats{
+    display:flex;
+    gap:15px;
+}
+
+.stat{
+    flex:1;
+    background:#1e293b;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+}
+
+</style>
+
 </head>
+
 <body>
 
-<h2>Добавить фильтр</h2>
+<div class="wrapper">
 
-<form method="post" action="/add">
-    Telegram ID: <input type="number" name="telegram_id" required><br><br>
-    Kufar URL: <input type="text" name="url" size="60" required><br><br>
-    <button type="submit">Добавить</button>
+<h1>🤖 Kufar Monitor</h1>
+
+<div class="stats">
+
+<div class="stat">
+<h2 id="filters">
+{{ stats.total_filters }}
+</h2>
+Фильтров
+</div>
+
+<div class="stat">
+<h2 id="sent">
+{{ stats.total_sent }}
+</h2>
+Отправлено
+</div>
+
+<div class="stat">
+<h2>
+{{ stats.total_ads }}
+</h2>
+В базе
+</div>
+
+</div>
+
+<br>
+
+<div class="card">
+
+<h2>Добавить поиск</h2>
+
+<form method="POST">
+
+<input
+name="telegram_id"
+placeholder="Telegram ID"
+required
+>
+
+<select name="source">
+
+<option value="kufar">
+Kufar
+</option>
+
+<option value="avby">
+AV.BY
+</option>
+
+</select>
+
+<input
+name="name"
+placeholder="Название поиска"
+required
+>
+
+<input
+name="url"
+placeholder="URL поиска"
+required
+>
+
+<button class="add">
+Добавить
+</button>
+
 </form>
 
-<hr>
+</div>
 
-<h2>Сохранённые фильтры</h2>
-
-<table border="1" cellpadding="10">
-<tr>
-    <th>ID</th>
-    <th>Telegram ID</th>
-    <th>URL</th>
-</tr>
+<h2>Поиски</h2>
 
 {% for f in filters %}
-<tr>
-    <td>{{ f[0] }}</td>
-    <td>{{ f[1] }}</td>
-    <td>{{ f[2] }}</td>
-</tr>
+
+<div class="card">
+
+<b>ID:</b> {{ f[0] }}<br>
+
+<b>Telegram:</b> {{ f[1] }}<br>
+
+<b>Источник:</b> {{ f[2] }}<br>
+
+<b>URL:</b><br>
+{{ f[3] }}
+
+<br><br>
+
+<a href="/delete/{{ f[0] }}">
+<button class="delete">
+Удалить
+</button>
+</a>
+
+</div>
+
 {% endfor %}
 
-</table>
+</div>
+
+<script>
+
+setInterval(async()=>{
+
+let s = await fetch("/api/stats");
+let stats = await s.json();
+
+document.getElementById(
+"filters"
+).innerText = stats.total_filters;
+
+document.getElementById(
+"sent"
+).innerText = stats.total_sent;
+
+},3000);
+
+</script>
 
 </body>
 </html>

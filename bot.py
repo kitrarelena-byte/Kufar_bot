@@ -1,5 +1,5 @@
 import asyncio
-
+from parser_avby import fetch_ads_avby
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -11,7 +11,7 @@ from config import TOKEN, CHECK_INTERVAL
 
 from db import (
     init_db,
-    add_filter,
+    add_filter_v2,
     get_user_filters,
     get_all_filters,
     ad_already_sent,
@@ -50,15 +50,40 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    url = context.args[0]
+    url = context.args[0].strip()
 
-    await add_filter(
+    # определяем источник
+
+    if "kufar.by" in url:
+
+        source = "kufar"
+
+    elif "av.by" in url:
+
+        source = "avby"
+
+    else:
+
+        await update.message.reply_text(
+            "Поддерживаются только:\n"
+            "- kufar.by\n"
+            "- av.by"
+        )
+        return
+
+    name = f"{source.upper()} поиск"
+
+    await add_filter_v2(
         update.effective_user.id,
+        source,
+        name,
         url
     )
 
     await update.message.reply_text(
-        "✅ Поиск добавлен"
+        f"✅ Поиск добавлен\n\n"
+        f"Источник: {source}\n"
+        f"{url}"
     )
 
 
@@ -173,10 +198,15 @@ async def check_ads(context: ContextTypes.DEFAULT_TYPE):
                         url
                     )
 
+                elif source == "avby":
+
+                    ads = await fetch_ads_avby(
+                        url
+                    )
+
                 else:
 
                     ads = []
-
                 print(
                     f"📄 FOUND ADS: {len(ads)}"
                 )

@@ -1,2 +1,4 @@
-TOKEN = "8082997794:AAGgoHg-QULRpSjdcqd_0SjU5VUSdLgmXmE"
+import os
+
+TOKEN = os.getenv("BOT_TOKEN")
 CHECK_INTERVAL = 20
