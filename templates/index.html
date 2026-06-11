@@ -1,204 +1,173 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 <head>
+<meta charset="UTF-8" />
 
-<meta charset="utf-8">
+<!-- 📱 FIX MOBILE SCALE + BLOCK ZOOM -->
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no,
+               viewport-fit=cover">
 
-<title>Kufar Monitor</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-
-body{
-    margin:0;
-    background:#0f172a;
-    color:white;
-    font-family:Arial;
+/* ====== GLOBAL ====== */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f0f10;
+    color: white;
+    overflow: hidden;
 }
 
-.wrapper{
-    max-width:1200px;
-    margin:auto;
-    padding:30px;
+/* 🚫 BLOCK GESTURE ZOOM */
+html, body {
+    touch-action: manipulation;
 }
 
-.card{
-    background:#1e293b;
-    padding:20px;
-    border-radius:12px;
-    margin-bottom:15px;
+/* ====== APP WRAPPER ====== */
+.app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-input,select{
-
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    margin-bottom:10px;
-
-    border:none;
-    border-radius:8px;
+/* ====== TOP TABS ====== */
+.tabs {
+    display: flex;
+    justify-content: space-around;
+    background: #1a1a1c;
+    padding: 10px 5px;
 }
 
-button{
-
-    padding:10px 15px;
-    border:none;
-
-    border-radius:8px;
-
-    cursor:pointer;
+.tab {
+    font-size: 14px;
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 8px;
 }
 
-.delete{
-    background:red;
-    color:white;
+.tab.active {
+    opacity: 1;
+    border-bottom: 2px solid #4c8bf5;
 }
 
-.add{
-    background:#2563eb;
-    color:white;
+/* ====== CONTENT ====== */
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
 }
 
-.stats{
-    display:flex;
-    gap:15px;
+/* ====== CARDS ====== */
+.card {
+    background: #1b1b1d;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
 }
 
-.stat{
-    flex:1;
-    background:#1e293b;
-    padding:20px;
-    border-radius:12px;
-    text-align:center;
+/* ====== INPUT ====== */
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border-radius: 10px;
+    border: none;
 }
 
+button {
+    background: #4c8bf5;
+    color: white;
+}
 </style>
-
 </head>
 
 <body>
 
-<div class="wrapper">
+<div class="app">
 
-<h1>🤖 Kufar Monitor</h1>
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab active" onclick="openTab('search')">Поиск</div>
+        <div class="tab" onclick="openTab('filters')">Фильтры</div>
+        <div class="tab" onclick="openTab('add')">Добавить</div>
+        <div class="tab" onclick="openTab('stats')">Аналитика</div>
+    </div>
 
-<div class="stats">
+    <!-- CONTENT -->
+    <div class="content">
 
-<div class="stat">
-<h2 id="filters">
-{{ stats.total_filters }}
-</h2>
-Фильтров
-</div>
+        <!-- SEARCH -->
+        <div id="search" class="section">
+            <h3>Поиск</h3>
+            <input id="query" placeholder="BMW, Audi..." />
+            <button onclick="search()">Найти</button>
+            <div id="results"></div>
+        </div>
 
-<div class="stat">
-<h2 id="sent">
-{{ stats.total_sent }}
-</h2>
-Отправлено
-</div>
+        <!-- FILTERS -->
+        <div id="filters" class="section" style="display:none">
+            <h3>Фильтры</h3>
+            <div class="card">Цена: 0 - 10 000$</div>
+            <div class="card">Год: 2005 - 2025</div>
+            <div class="card">Пробег: до 200k</div>
+        </div>
 
-<div class="stat">
-<h2>
-{{ stats.total_ads }}
-</h2>
-В базе
-</div>
+        <!-- ADD -->
+        <div id="add" class="section" style="display:none">
+            <h3>Добавить фильтр</h3>
+            <input placeholder="например: BMW / до 5000$" />
+            <button>Сохранить</button>
+        </div>
 
-</div>
+        <!-- STATS -->
+        <div id="stats" class="section" style="display:none">
+            <h3>Аналитика</h3>
+            <div class="card">Всего запросов: 124</div>
+            <div class="card">Активных фильтров: 3</div>
+            <div class="card">Новых объявлений: 18</div>
+        </div>
 
-<br>
-
-<div class="card">
-
-<h2>Добавить поиск</h2>
-
-<form method="POST">
-
-<input
-name="telegram_id"
-placeholder="Telegram ID"
-required
->
-
-<select name="source">
-
-<option value="kufar">
-Kufar
-</option>
-
-<option value="avby">
-AV.BY
-</option>
-
-</select>
-
-<input
-name="name"
-placeholder="Название поиска"
-required
->
-
-<input
-name="url"
-placeholder="URL поиска"
-required
->
-
-<button class="add">
-Добавить
-</button>
-
-</form>
-
-</div>
-
-<h2>Поиски</h2>
-
-{% for f in filters %}
-
-<div class="card">
-
-<b>ID:</b> {{ f[0] }}<br>
-
-<b>Telegram:</b> {{ f[1] }}<br>
-
-<b>Источник:</b> {{ f[2] }}<br>
-
-<b>URL:</b><br>
-{{ f[3] }}
-
-<br><br>
-
-<a href="/delete/{{ f[0] }}">
-<button class="delete">
-Удалить
-</button>
-</a>
-
-</div>
-
-{% endfor %}
-
+    </div>
 </div>
 
 <script>
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-setInterval(async()=>{
+/* TAB SWITCH */
+function openTab(tab) {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.getElementById(tab).style.display = 'block';
 
-let s = await fetch("/api/stats");
-let stats = await s.json();
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+}
 
-document.getElementById(
-"filters"
-).innerText = stats.total_filters;
+/* SEARCH */
+async function search() {
+    let q = document.getElementById("query").value;
 
-document.getElementById(
-"sent"
-).innerText = stats.total_sent;
+    let res = await fetch(`/api/search?q=${q}`);
+    let data = await res.json();
 
-},3000);
+    let container = document.getElementById("results");
+    container.innerHTML = "";
 
+    data.results.forEach(item => {
+        container.innerHTML += `
+            <div class="card">
+                <b>${item.title}</b><br/>
+                ${item.price}<br/>
+                <a href="${item.link}" style="color:#4c8bf5">Открыть</a>
+            </div>
+        `;
+    });
+}
 </script>
 
 </body>
